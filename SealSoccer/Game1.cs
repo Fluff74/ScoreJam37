@@ -21,6 +21,33 @@ namespace SealSoccer
         float yScale; // Used to support different screen resolutions, up to 4K UHD.
         Matrix windowScaler; // Used to scale the entire game based on the above scales.
 
+        // Input
+        KeyboardState kb; // The current state of the keyboard.
+        KeyboardState pkb; // The previous state of the keyboard.
+
+        /// <summary>
+        /// The current state the game is in.
+        /// </summary>
+        enum GameState
+        {
+            MainMenu,
+            Game,
+            Leaderboard
+        }
+        GameState gameState;
+
+        #endregion
+
+        #region Objects
+
+        Seal seal;
+
+        #endregion
+
+        #region Assets
+
+        Texture2D snowflake;
+
         #endregion
 
         public Game1()
@@ -47,6 +74,8 @@ namespace SealSoccer
             yScale = (float)_graphics.PreferredBackBufferHeight / 2160;
             windowScaler = Matrix.CreateScale(xScale, yScale, 1.0f);
 
+            gameState = GameState.Game;
+
             base.Initialize();
         }
 
@@ -54,16 +83,44 @@ namespace SealSoccer
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            // TODO: use this.Content to load your game content here
+            #region Assets
+
+            snowflake = Content.Load<Texture2D>($"Snowflake");
+
+            #endregion
+
+            #region Objects
+
+            seal = new Seal(snowflake);
+
+            #endregion
         }
 
         protected override void Update(GameTime gameTime)
         {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
-                Exit();
+            if(GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape)) { Exit(); }
+            kb = Keyboard.GetState();
 
-            // TODO: Add your update logic here
+            switch(gameState)
+            {
+                case GameState.Game:
 
+                    // Allows the player to move left.
+                    if(kb.IsKeyDown(Keys.A))
+                    {
+                        seal.Move(false);
+                    }
+
+                    // Allows the player to move right.
+                    if(kb.IsKeyDown(Keys.D))
+                    {
+                        seal.Move(true);
+                    }
+
+                    break;
+            }
+
+            pkb = kb; // Set previous keyboard state to the keyboard state at the end of the frame.
             base.Update(gameTime);
         }
 
@@ -73,11 +130,21 @@ namespace SealSoccer
 
             _spriteBatch.Begin(transformMatrix: windowScaler);
 
-
+            seal.Draw(_spriteBatch);
 
             _spriteBatch.End();
 
             base.Draw(gameTime);
+        }
+
+        /// <summary>
+        /// Checks whether or not the specified key was pressed once.
+        /// </summary>
+        /// <param name="key"> The key we're checking. </param>
+        /// <returns> Whether or not the key has been pressed once. </returns>
+        public bool SingleKeyPress(Keys key)
+        {
+            return kb.IsKeyDown(key) && pkb.IsKeyUp(key);
         }
     }
 }
