@@ -1,6 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 
 namespace SealSoccer
 {
@@ -39,8 +38,8 @@ namespace SealSoccer
 
             this.spritesheet = spritesheet;
             origin = new(0.0f, 0.0f);
-            drawbox = new(1645, 1750, 550, 320);
-            hitbox = new(1645, 1790, 550, 280);
+            drawbox = new(1645, 1740, 555, 330);
+            hitbox = new(1645, 1780, 555, 290);
             source = new(0, 0, 183, 107);
         }
 
@@ -115,6 +114,16 @@ namespace SealSoccer
 
                     break;
             }
+        }
+
+        /// <summary>
+        /// Checks to see whether or not the soccerball is colliding with the seal.
+        /// </summary>
+        /// <param name="soccerball"> The hitbox of the soccerball. </param>
+        /// <returns> Whether or not they're colliding. </returns>
+        public bool CheckCollision(Rectangle soccerball)
+        {
+            return hitbox.Intersects(soccerball);
         }
 
         public void Reset()

@@ -41,6 +41,7 @@ namespace SealSoccer
         #region Objects
 
         Seal seal;
+        SoccerBall soccerBall;
 
         #endregion
 
@@ -91,7 +92,8 @@ namespace SealSoccer
 
             #region Objects
 
-            seal = new Seal(snowflake);
+            seal = new(snowflake);
+            soccerBall = new(snowflake);
 
             #endregion
         }
@@ -104,6 +106,13 @@ namespace SealSoccer
             switch(gameState)
             {
                 case GameState.Game:
+
+                    soccerBall.Update();
+
+                    if(seal.CheckCollision(soccerBall.Hitbox))
+                    {
+                        soccerBall.Launch();
+                    }
 
                     // Allows the player to move left.
                     if(kb.IsKeyDown(Keys.A))
@@ -131,6 +140,7 @@ namespace SealSoccer
             _spriteBatch.Begin(transformMatrix: windowScaler);
 
             seal.Draw(_spriteBatch);
+            soccerBall.Draw(_spriteBatch);
 
             _spriteBatch.End();
 
