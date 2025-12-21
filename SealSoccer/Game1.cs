@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System.Collections.Generic;
 
 namespace SealSoccer
 {
@@ -36,6 +37,9 @@ namespace SealSoccer
         }
         GameState gameState;
 
+        // Used to store and update all of the snowflakes.
+        readonly List<Snow> snowManager = [];
+
         #endregion
 
         #region Objects
@@ -48,6 +52,16 @@ namespace SealSoccer
         #region Assets
 
         Texture2D snowflake;
+        Texture2D sealSpritesheet;
+        Texture2D soccerBallSprite;
+        Texture2D ground;
+
+        #endregion
+
+        #region Variables
+
+        int score; // How many consecutive balls the seal has bumped.
+        int wind; // The current speed at which the wind is blowing.
 
         #endregion
 
@@ -77,6 +91,8 @@ namespace SealSoccer
 
             gameState = GameState.Game;
 
+            wind = 0;
+
             base.Initialize();
         }
 
@@ -87,13 +103,25 @@ namespace SealSoccer
             #region Assets
 
             snowflake = Content.Load<Texture2D>($"Snowflake");
+            sealSpritesheet = Content.Load<Texture2D>($"Seal");
+            soccerBallSprite = Content.Load<Texture2D>($"Soccerball");
 
             #endregion
 
             #region Objects
 
-            seal = new(snowflake);
-            soccerBall = new(snowflake);
+            seal = new(sealSpritesheet);
+            soccerBall = new(soccerBallSprite);
+
+            #endregion
+
+            #region Utilities
+
+            // Populate the snow manager with 150 snowflakes.
+            for (int i = 0; i < 150; i++)
+            {
+                snowManager.Add(new(snowflake));
+            }
 
             #endregion
         }
@@ -107,11 +135,25 @@ namespace SealSoccer
             {
                 case GameState.Game:
 
-                    soccerBall.Update();
+                    soccerBall.Update(0);
 
-                    if(seal.CheckCollision(soccerBall.Hitbox))
+                    // Handle seal's collision with the ball.
+                    switch(seal.CheckCollision(soccerBall.Hitbox))
                     {
-                        soccerBall.Launch();
+                        // Launches the ball.
+                        case Seal.BumpType.Launch:
+
+                            soccerBall.Launch();
+                            score++;
+
+                            break;
+
+                        // Fixes the ball.
+                        case Seal.BumpType.Side:
+
+                            seal.HandleOverlap(soccerBall);
+
+                            break;
                     }
 
                     // Allows the player to move left.
@@ -126,6 +168,12 @@ namespace SealSoccer
                         seal.Move(true);
                     }
 
+                    // Update each of the snowflakes.
+                    foreach(Snow snowflake in snowManager)
+                    {
+                        snowflake.Update(wind);
+                    }
+
                     break;
             }
 
@@ -137,10 +185,16 @@ namespace SealSoccer
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            _spriteBatch.Begin(transformMatrix: windowScaler);
+            _spriteBatch.Begin(transformMatrix: windowScaler, samplerState: SamplerState.PointClamp);
 
             seal.Draw(_spriteBatch);
             soccerBall.Draw(_spriteBatch);
+
+            // Draw each of the snowflakes.
+            foreach (Snow snowflake in snowManager)
+            {
+                snowflake.Draw(_spriteBatch);
+            }
 
             _spriteBatch.End();
 

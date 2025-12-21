@@ -21,6 +21,16 @@ namespace SealSoccer
         Facing facing;
 
         /// <summary>
+        /// This is the type of collision that the seal has with the ball.
+        /// </summary>
+        public enum BumpType
+        {
+            Launch,
+            Side
+        }
+        BumpType bumpType;
+
+        /// <summary>
         /// The speed at which the seal moves.
         /// </summary>
         public int Speed { get; set; }
@@ -119,11 +129,36 @@ namespace SealSoccer
         /// <summary>
         /// Checks to see whether or not the soccerball is colliding with the seal.
         /// </summary>
-        /// <param name="soccerball"> The hitbox of the soccerball. </param>
-        /// <returns> Whether or not they're colliding. </returns>
-        public bool CheckCollision(Rectangle soccerball)
+        /// <param name="soccerball"> The soccerball's hitbox. </param>
+        /// <returns> The type of collision. </returns>
+        public BumpType CheckCollision(Rectangle soccerball)
         {
-            return hitbox.Intersects(soccerball);
+            Rectangle temp = Rectangle.Intersect(hitbox, soccerball);
+            if(temp.Width > temp.Height)
+            {
+                return BumpType.Launch;
+            }
+            else
+            {
+                return BumpType.Side;
+            }
+        }
+
+        /// <summary>
+        /// Handles the overlap with the soccerball, if it's not meant to be launched.
+        /// </summary>
+        /// <param name="soccerball"></param>
+        public void HandleOverlap(SoccerBall soccerball)
+        {
+            int temp = Rectangle.Intersect(hitbox, soccerball.Hitbox).Width;
+            if(hitbox.X > soccerball.Hitbox.X)
+            {
+                soccerball.Translate(temp * -1);
+            }
+            else
+            {
+                soccerball.Translate(temp);
+            }
         }
 
         public void Reset()

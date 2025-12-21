@@ -18,7 +18,10 @@ namespace SealSoccer
 
         Texture2D sprite; // This is the sprite of the soccerball.
         Rectangle hitbox; // This is both the hitbox of the soccerball, but also where it'll be drawn from.
+        Rectangle drawbox;
+        Rectangle source; // This is the source rectangle from which the soccerball is drawn.
         Vector2 velocity; // This is the current velocity of the ball.
+        float rotation; // The rotation of the ball.
 
         readonly float gravity = 0.3f; // It's gravity, it moves the ball downwards.
         readonly Random rng = new(); // This is a standard C# Random Number Generator.
@@ -27,26 +30,73 @@ namespace SealSoccer
         {
             this.sprite = sprite;
             hitbox = new(1830, 600, 180, 180);
+            drawbox = new(1900, 660, 180, 180);
+            source = new(0, 0, 60, 60);
             velocity = new(0.0f, -10.0f);
+            rotation = 0;
         }
 
-        public void Update()
+        public void Update(int wind)
         {
+            // Move the ball.
             hitbox.X += (int)velocity.X;
             hitbox.Y += (int)velocity.Y;
 
+            // Adjust for wind.
+            hitbox.X += wind;
+
+            // Updates the rotation so the ball looks animated and cool.
+            rotation += velocity.X / 100;
+
+            // Make the ball bounce off the sides of the screen.
+            if(hitbox.X < 0)
+            {
+                hitbox.X = 0;
+                velocity.X *= -1;
+            }
+            if(hitbox.X > 3660)
+            {
+                hitbox.X = 3660;
+                velocity.X *= -1;
+            }
+
+            // Account for gravity.
             velocity.Y += gravity;
+
+            // Update the drawbox accordingly.
+            drawbox.X = hitbox.X + 90;
+            drawbox.Y = hitbox.Y + 90;
         }
 
+        /// <summary>
+        /// Launches the soccerball.
+        /// </summary>
         public void Launch()
         {
             // Maximum Y-Velocity can be -31.0f, minimum is -17.0f
             velocity.Y = (float)(rng.Next(170, 311) / 10) * -1;
+
+            // Maximum X-Velocity can be -15.0f, minimum is 15.0f
+            velocity.X = (float)(rng.Next(150, 451) / 10);
+            velocity.X -= 30;
         }
 
+        /// <summary>
+        /// Translates the hitbox of the soccerball.
+        /// </summary>
+        /// <param name="value"> The value by which we're translating the soccerball's hitbox. </param>
+        public void Translate(int value)
+        {
+            hitbox.X += value;
+        }
+
+        /// <summary>
+        /// Draws the soccerball, even accounting for it's rotation!!!
+        /// </summary>
+        /// <param name="sb"> The SpriteBatch with which we're drawing the ball. </param>
         public void Draw(SpriteBatch sb)
         {
-            sb.Draw(sprite, hitbox, Color.White);
+            sb.Draw(sprite, drawbox, source, Color.White, rotation, source.Center.ToVector2(), SpriteEffects.None, 0.0f);
         }
 
         public void Reset()
