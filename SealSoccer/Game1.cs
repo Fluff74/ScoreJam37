@@ -65,6 +65,10 @@ namespace SealSoccer
         int score; // How many consecutive balls the seal has bumped.
         float wind; // The current speed at which the wind is blowing.
         int windParameter; // The amount of points needed for the wind to change direction.
+        int xMod; // The value by which the ball's X velocity can be modified.
+        int xModParameter; // The amount of points needed for xMod to increase.
+        int gravParamOne; // The amount of points needed to increase gravity once.
+        int gravParamTwo; // The amount of points needed to increase gravity twice.
 
         #endregion
 
@@ -98,12 +102,16 @@ namespace SealSoccer
             yScale = (float)_graphics.PreferredBackBufferHeight / 2160;
             windowScaler = Matrix.CreateScale(xScale, yScale, 1.0f);
 
-            groundDrawbox = new(0, 2070, 3840, 90);
+            groundDrawbox = new(0, 2070, 3840, 90); // The place we're drawing the ground.
 
             gameState = GameState.Game;
 
             wind = 0; // There is no wind at the start.
             windParameter = 5; // Sets the wind parameter to an initial value of five.
+            xMod = 0; // There is no xMod at the start.
+            xModParameter = 10; // Sets the xModParameter to an initial value of ten.
+            gravParamOne = 25; // Sets the first gravity increment to happen at 25 points.
+            gravParamTwo = 50; // Sets the second gravity increment to happen at 50 points.
 
             base.Initialize();
         }
@@ -157,9 +165,12 @@ namespace SealSoccer
                         // Launches the ball.
                         case Seal.BumpType.Launch:
 
-                            soccerBall.Launch();
+                            soccerBall.Launch(xMod);
                             score++; // Add a point to score.
                             windParameter--; // Decrement wind parameter.
+                            xModParameter--; // Decrement xMod parameter;
+                            gravParamOne--; // Decrement gravity parameter one.
+                            gravParamTwo--; // Decrement gravity parameter two.
 
                             break;
 
@@ -203,6 +214,13 @@ namespace SealSoccer
                         // Keeps the wind between -10 and 10.
                         wind = rng.Next(10, 31) - 20;
                         windParameter = 5;
+                    }
+
+                    // Increments xMod every ten points.
+                    if(xModParameter == 0)
+                    {
+                        xMod++;
+                        xModParameter = 10;
                     }
 
                     if(CheckGroundCollision(soccerBall.Hitbox))
@@ -267,6 +285,10 @@ namespace SealSoccer
             soccerBall.Reset();
             wind = 0;
             windParameter = 5;
+            xMod = 0;
+            xModParameter = 10;
+            gravParamOne = 25;
+            gravParamTwo = 50;
         }
     }
 }

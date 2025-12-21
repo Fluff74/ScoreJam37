@@ -16,14 +16,17 @@ namespace SealSoccer
         /// </summary>
         public Rectangle Hitbox { get { return hitbox; } }
 
+        /// <summary>
+        /// It's gravity, it moves the ball downwards.
+        /// </summary>
+        public float Gravity { get; set; }
+
         Texture2D sprite; // This is the sprite of the soccerball.
         Rectangle hitbox; // This is both the hitbox of the soccerball, but also where it'll be drawn from.
         Rectangle drawbox;
         Rectangle source; // This is the source rectangle from which the soccerball is drawn.
         Vector2 velocity; // This is the current velocity of the ball.
         float rotation; // The rotation of the ball.
-
-        readonly float gravity = 0.3f; // It's gravity, it moves the ball downwards.
         readonly Random rng = new(); // This is a standard C# Random Number Generator.
 
         public SoccerBall(Texture2D sprite)
@@ -34,6 +37,7 @@ namespace SealSoccer
             source = new(0, 0, 60, 60);
             velocity = new(0.0f, -10.0f);
             rotation = 0;
+            Gravity = 0.3f;
         }
 
         public void Update(float wind)
@@ -61,7 +65,7 @@ namespace SealSoccer
             }
 
             // Account for gravity.
-            velocity.Y += gravity;
+            velocity.Y += Gravity;
 
             // Update the drawbox accordingly.
             drawbox.X = hitbox.X + 90;
@@ -71,7 +75,8 @@ namespace SealSoccer
         /// <summary>
         /// Launches the soccerball.
         /// </summary>
-        public void Launch()
+        /// <param name="xMod"> The amount that the X velocity of the ball can be modified. </param>
+        public void Launch(int xMod)
         {
             hitbox.Y = 1679; // Puts the ball immediately above the seal.
 
@@ -82,11 +87,12 @@ namespace SealSoccer
             velocity.X = (float)(rng.Next(150, 451) / 10);
             velocity.X -= 30;
 
-            // Speed increase demo. Will prolly need gravity increase as well.
-            // if(velocity.X < 0)
-            // {
-            //     velocity.X -= 15;
-            // }
+            // When the score is higher, then start giving the ball some CRAZY velocity.
+            if(velocity.X < 0)
+            {
+                velocity.X -= rng.Next(xMod, xMod * 3 + 1) / 10;
+                velocity.X -= xMod * 2;
+            }
         }
 
         /// <summary>
@@ -113,6 +119,7 @@ namespace SealSoccer
             hitbox.Y = 600;
             velocity.X = 0.0f;
             velocity.Y = 0.0f;
+            Gravity = 0.3f;
         }
     }
 }
