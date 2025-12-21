@@ -63,7 +63,7 @@ namespace SealSoccer
         #region Variables
 
         int score; // How many consecutive balls the seal has bumped.
-        int wind; // The current speed at which the wind is blowing.
+        float wind; // The current speed at which the wind is blowing.
         int windParameter; // The amount of points needed for the wind to change direction.
 
         #endregion
@@ -148,7 +148,8 @@ namespace SealSoccer
             {
                 case GameState.Game:
 
-                    soccerBall.Update(wind);
+                    // Update the soccerball every frame.
+                    soccerBall.Update(wind / 50);
 
                     // Handle seal's collision with the ball.
                     switch(seal.CheckCollision(soccerBall.Hitbox))
@@ -171,22 +172,30 @@ namespace SealSoccer
                     }
 
                     // Allows the player to move left.
-                    if(kb.IsKeyDown(Keys.A))
+                    if(kb.IsKeyDown(Keys.A) && kb.IsKeyUp(Keys.D))
                     {
                         seal.Move(false);
+                        seal.UpdateAnimation(gameTime);
                     }
 
                     // Allows the player to move right.
-                    if(kb.IsKeyDown(Keys.D))
+                    else if(kb.IsKeyDown(Keys.D) && kb.IsKeyUp(Keys.A))
                     {
                         seal.Move(true);
+                        seal.UpdateAnimation(gameTime);
+                    }
+
+                    // Resets the seal's animation if he's not moving.
+                    else
+                    {
+                        seal.ResetAnimation();
                     }
 
                     // Update each of the snowflakes.
-                    foreach(Snow snowflake in snowManager)
-                    {
-                        snowflake.Update(wind);
-                    }
+                    foreach (Snow snowflake in snowManager)
+                        {
+                            snowflake.Update((int)wind);
+                        }
 
                     // Changes the wind every five points.
                     if(windParameter == 0)
@@ -196,7 +205,7 @@ namespace SealSoccer
                         windParameter = 5;
                     }
 
-                    if (CheckGroundCollision(soccerBall.Hitbox))
+                    if(CheckGroundCollision(soccerBall.Hitbox))
                     {
                         ResetGame();
                     }

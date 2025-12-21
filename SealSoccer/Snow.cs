@@ -44,7 +44,7 @@ namespace SealSoccer
             drawbox.X += wind;
 
             // If the snow falls off the bottom of the screen, reset it.
-            if(drawbox.Y > 2160)
+            if(drawbox.Y > 2070)
             {
                 Reset();
             }

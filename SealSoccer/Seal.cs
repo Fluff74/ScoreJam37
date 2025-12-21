@@ -8,7 +8,11 @@ namespace SealSoccer
     //
     // This is the seal that the player will control in the game! It walks left and right. It'll have an
     // animation for galumphing.
-    internal class Seal
+    /// <summary>
+    /// This is the seal object's constructor. All it takes in is one spritesheet.
+    /// </summary>
+    /// <param name="spritesheet"> The spritesheet containing the seal's galumphing animation sprites. </param>
+    internal class Seal(Texture2D spritesheet)
     {
         /// <summary>
         /// This is the direction that the seal is facing in.
@@ -18,7 +22,7 @@ namespace SealSoccer
             Left,
             Right
         }
-        Facing facing;
+        Facing facing = Facing.Right;
 
         /// <summary>
         /// This is the type of collision that the seal has with the ball.
@@ -28,34 +32,45 @@ namespace SealSoccer
             Launch,
             Side
         }
-        BumpType bumpType;
 
         /// <summary>
         /// The speed at which the seal moves.
         /// </summary>
-        public int Speed { get; set; }
+        public int Speed { get; set; } = 20; // Always between 20 and 30.
 
-        Texture2D spritesheet; // Used while the seal is moving.
-        readonly Vector2 origin; // The origin we're drawing the seal from.
-        Rectangle drawbox; // This is where the seal is drawn from.
-        Rectangle hitbox; // This is the seal's hitbox, where it can hit the ball from.
-        Rectangle source; // The source rectangle on the spritesheet that we're drawing the seal from.
+        readonly Texture2D spritesheet = spritesheet; // Used while the seal is moving.
+        readonly Vector2 origin = new(0.0f, 0.0f); // The origin we're drawing the seal from.
+        Rectangle drawbox = new(1645, 1780, 555, 330); // This is where the seal is drawn from.
+        Rectangle hitbox = new(1645, 1860, 555, 290); // This is the seal's hitbox, where it can hit the ball from.
+        Rectangle source = new(0, 0, 185, 110); // The source rectangle on the spritesheet that we're drawing the seal from.
+        int frame = 0; // The current frame of the animation we're on.
+        float timeElapsed = 0.0f; // The timer for when to increment frames.
+        readonly float secondsPerFrame = 0.06f; // How many seconds go by in one frame.
 
-        public Seal(Texture2D spritesheet)
+        /// <summary>
+        /// Updates the frame data of the seal's animation.
+        /// </summary>
+        /// <param name="gameTime"> The time elapsed in the game. </param>
+        public void UpdateAnimation(GameTime gameTime)
         {
-            facing = Facing.Right; // Start the seal facing to the right.
-            Speed = 20; // Always between 20 and 30.
+            // Check how much time has elapsed.
+            timeElapsed += (float)gameTime.ElapsedGameTime.TotalSeconds;
+            
+            // If more time has elapsed then the seconds per frame value, increment the frame and reset the timer.
+            if(timeElapsed >= secondsPerFrame)
+            {
+                timeElapsed = 0.0f;
+                frame++;
 
-            this.spritesheet = spritesheet;
-            origin = new(0.0f, 0.0f);
-            drawbox = new(1645, 1780, 555, 330);
-            hitbox = new(1645, 1860, 555, 290);
-            source = new(0, 0, 183, 107);
-        }
+                // Keep the frames bound in the spritesheet.
+                if(frame > 5)
+                {
+                    frame = 0;
+                }
 
-        public void Update(GameTime gameTime)
-        {
-
+                // Move the source rectangle accordingly.
+                source.X = 185 * frame;
+            }
         }
 
         /// <summary>
@@ -161,6 +176,9 @@ namespace SealSoccer
             }
         }
 
+        /// <summary>
+        /// Resets all of the seal's game values.
+        /// </summary>
         public void Reset()
         {
             drawbox.X = 1645;
@@ -169,6 +187,17 @@ namespace SealSoccer
             hitbox.Y = 1860;
             facing = Facing.Right;
             Speed = 20;
+            ResetAnimation();
+        }
+
+        /// <summary>
+        /// Resets the seal's animation.
+        /// </summary>
+        public void ResetAnimation()
+        {
+            frame = 0;
+            timeElapsed = 0;
+            source.X = 185 * frame;
         }
     }
 }

@@ -36,14 +36,14 @@ namespace SealSoccer
             rotation = 0;
         }
 
-        public void Update(int wind)
+        public void Update(float wind)
         {
             // Move the ball.
             hitbox.X += (int)velocity.X;
             hitbox.Y += (int)velocity.Y;
 
             // Adjust for wind.
-            hitbox.X += wind;
+            velocity.X += wind;
 
             // Updates the rotation so the ball looks animated and cool.
             rotation += velocity.X / 100;
