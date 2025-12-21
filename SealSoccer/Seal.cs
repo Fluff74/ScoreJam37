@@ -48,8 +48,8 @@ namespace SealSoccer
 
             this.spritesheet = spritesheet;
             origin = new(0.0f, 0.0f);
-            drawbox = new(1645, 1740, 555, 330);
-            hitbox = new(1645, 1780, 555, 290);
+            drawbox = new(1645, 1780, 555, 330);
+            hitbox = new(1645, 1860, 555, 290);
             source = new(0, 0, 183, 107);
         }
 
@@ -164,7 +164,9 @@ namespace SealSoccer
         public void Reset()
         {
             drawbox.X = 1645;
-            drawbox.Y = 1750;
+            drawbox.Y = 1780;
+            hitbox.X = 1645;
+            hitbox.Y = 1860;
             facing = Facing.Right;
             Speed = 20;
         }

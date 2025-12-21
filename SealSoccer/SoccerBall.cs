@@ -73,12 +73,20 @@ namespace SealSoccer
         /// </summary>
         public void Launch()
         {
+            hitbox.Y = 1679; // Puts the ball immediately above the seal.
+
             // Maximum Y-Velocity can be -31.0f, minimum is -17.0f
             velocity.Y = (float)(rng.Next(170, 311) / 10) * -1;
 
             // Maximum X-Velocity can be -15.0f, minimum is 15.0f
             velocity.X = (float)(rng.Next(150, 451) / 10);
             velocity.X -= 30;
+
+            // Speed increase demo. Will prolly need gravity increase as well.
+            // if(velocity.X < 0)
+            // {
+            //     velocity.X -= 15;
+            // }
         }
 
         /// <summary>

@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
+using System;
 
 namespace SealSoccer
 {
@@ -39,6 +40,7 @@ namespace SealSoccer
 
         // Used to store and update all of the snowflakes.
         readonly List<Snow> snowManager = [];
+        readonly Random rng = new();
 
         #endregion
 
@@ -62,6 +64,13 @@ namespace SealSoccer
 
         int score; // How many consecutive balls the seal has bumped.
         int wind; // The current speed at which the wind is blowing.
+        int windParameter; // The amount of points needed for the wind to change direction.
+
+        #endregion
+
+        #region Draw Locations
+
+        Rectangle groundDrawbox;
 
         #endregion
 
@@ -89,9 +98,12 @@ namespace SealSoccer
             yScale = (float)_graphics.PreferredBackBufferHeight / 2160;
             windowScaler = Matrix.CreateScale(xScale, yScale, 1.0f);
 
+            groundDrawbox = new(0, 2070, 3840, 90);
+
             gameState = GameState.Game;
 
-            wind = 0;
+            wind = 0; // There is no wind at the start.
+            windParameter = 5; // Sets the wind parameter to an initial value of five.
 
             base.Initialize();
         }
@@ -105,6 +117,7 @@ namespace SealSoccer
             snowflake = Content.Load<Texture2D>($"Snowflake");
             sealSpritesheet = Content.Load<Texture2D>($"Seal");
             soccerBallSprite = Content.Load<Texture2D>($"Soccerball");
+            ground = Content.Load<Texture2D>($"Ground");
 
             #endregion
 
@@ -118,7 +131,7 @@ namespace SealSoccer
             #region Utilities
 
             // Populate the snow manager with 150 snowflakes.
-            for (int i = 0; i < 150; i++)
+            for (int i = 0; i < 1500; i++)
             {
                 snowManager.Add(new(snowflake));
             }
@@ -135,7 +148,7 @@ namespace SealSoccer
             {
                 case GameState.Game:
 
-                    soccerBall.Update(0);
+                    soccerBall.Update(wind);
 
                     // Handle seal's collision with the ball.
                     switch(seal.CheckCollision(soccerBall.Hitbox))
@@ -144,7 +157,8 @@ namespace SealSoccer
                         case Seal.BumpType.Launch:
 
                             soccerBall.Launch();
-                            score++;
+                            score++; // Add a point to score.
+                            windParameter--; // Decrement wind parameter.
 
                             break;
 
@@ -174,6 +188,19 @@ namespace SealSoccer
                         snowflake.Update(wind);
                     }
 
+                    // Changes the wind every five points.
+                    if(windParameter == 0)
+                    {
+                        // Keeps the wind between -10 and 10.
+                        wind = rng.Next(10, 31) - 20;
+                        windParameter = 5;
+                    }
+
+                    if (CheckGroundCollision(soccerBall.Hitbox))
+                    {
+                        ResetGame();
+                    }
+
                     break;
             }
 
@@ -187,6 +214,7 @@ namespace SealSoccer
 
             _spriteBatch.Begin(transformMatrix: windowScaler, samplerState: SamplerState.PointClamp);
 
+            _spriteBatch.Draw(ground, groundDrawbox, Color.White);
             seal.Draw(_spriteBatch);
             soccerBall.Draw(_spriteBatch);
 
@@ -209,6 +237,27 @@ namespace SealSoccer
         public bool SingleKeyPress(Keys key)
         {
             return kb.IsKeyDown(key) && pkb.IsKeyUp(key);
+        }
+
+        /// <summary>
+        /// Checks to see if the soccerball hit the ground.
+        /// </summary>
+        /// <param name="soccerball"> The hitbox of the soccerball. </param>
+        /// <returns> Whether or not the soccerball hit the ground. </returns>
+        public bool CheckGroundCollision(Rectangle soccerball)
+        {
+            return groundDrawbox.Intersects(soccerball);
+        }
+
+        /// <summary>
+        /// Resets the game.
+        /// </summary>
+        public void ResetGame()
+        {
+            seal.Reset();
+            soccerBall.Reset();
+            wind = 0;
+            windParameter = 5;
         }
     }
 }
