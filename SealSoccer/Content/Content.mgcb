@@ -37,6 +37,18 @@
 /processorParam:TextureFormat=Color
 /build:Backdrop.png
 
+#begin BackgroundMusic.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/build:BackgroundMusic.mp3
+
+#begin Bump.WAV
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Bump.WAV
+
 #begin GameOverMenu.png
 /importer:TextureImporter
 /processor:TextureProcessor

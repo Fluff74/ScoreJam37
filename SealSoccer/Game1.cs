@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Media;
+using Microsoft.Xna.Framework.Audio;
 
 namespace SealSoccer
 {
@@ -27,6 +29,9 @@ namespace SealSoccer
         // Input
         KeyboardState kb; // The current state of the keyboard.
         KeyboardState pkb; // The previous state of the keyboard.
+        MouseState ms; // The current state of the mouse.
+        MouseState pms; // The previous state of the mouse.
+        Point adjustedMousePosition; // The adjusted location of the mouse, based on the resolution of the screen.
 
         /// <summary>
         /// The current state the game is in.
@@ -50,6 +55,11 @@ namespace SealSoccer
         Seal seal; // Player character.
         SoccerBall soccerBall; // The ball that the player tries to hit.
 
+        // Buttons
+        Button playButton; // The button players need to click on to play the game.
+        Button quitButton; // The button players need to click on to close the game.
+        Button menuButton; // The button players need to click on to return to the main menu.
+
         #endregion
 
         #region Assets
@@ -62,6 +72,8 @@ namespace SealSoccer
         Texture2D logo;
         Texture2D gameOverMenu;
         SpriteFont mediumJersey10;
+        Song backgroundMusic;
+        SoundEffect bump;
 
         #endregion
 
@@ -113,11 +125,17 @@ namespace SealSoccer
 
         protected override void Initialize()
         {
+            #region Utilities
+
             // Set the scales to render at 4K, and then create the scale matrix.
             xScale = (float)_graphics.PreferredBackBufferWidth / 3840;
             yScale = (float)_graphics.PreferredBackBufferHeight / 2160;
             windowScaler = Matrix.CreateScale(xScale, yScale, 1.0f);
             gameState = GameState.MainMenu; // Make sure we start off on the main menu.
+
+            #endregion
+
+            #region Draw Locations
 
             groundDrawbox = new(0, 2070, 3840, 90); // The place we're drawing the ground.
             backdropDrawbox = new(0, 0, 3840, 2070); // The place we're drawing the backdrop.
@@ -128,7 +146,9 @@ namespace SealSoccer
             gameOverTextWriteVector = new(1550, 510); // Where we write "Game Over!" on the menu.
             gameOverScoreWriteVector = new(1510, 740); // Where we write the player's current score on the menu.
             gameOverHighscoreWriteVector = new(1510, 900); // Where we write the player's current highscore on the menu.
-            gameOverNewScoreWriteVector = new(1420, 1120); // Where we write "New Highscore!" on the game over menu.
+            gameOverNewScoreWriteVector = new(1420, 1150); // Where we write "New Highscore!" on the game over menu.
+
+            #endregion
 
             #region Variables
 
@@ -161,6 +181,8 @@ namespace SealSoccer
             logo = Content.Load<Texture2D>($"Snowflake");
             gameOverMenu = Content.Load<Texture2D>($"GameOverMenu");
             mediumJersey10 = Content.Load<SpriteFont>($"Jersey10");
+            backgroundMusic = Content.Load<Song>($"BackgroundMusic");
+            bump = Content.Load<SoundEffect>($"Bump");
 
             #endregion
 
@@ -168,6 +190,11 @@ namespace SealSoccer
 
             seal = new(sealSpritesheet);
             soccerBall = new(soccerBallSprite);
+
+            // Buttons
+            playButton = new($"Play", mediumJersey10, new(2600, 1700), new(2580, 1735, 295, 155));
+            quitButton = new($"Quit", mediumJersey10, new(3200, 1700), new(3180, 1735, 490, 155));
+            menuButton = new($"Menu", mediumJersey10, new(1750, 1420), new(1730, 1455, 380, 140));
 
             #endregion
 
@@ -180,12 +207,25 @@ namespace SealSoccer
             }
 
             #endregion
+
+            // Play the background music.
+            MediaPlayer.Volume = 0.08f;
+            MediaPlayer.Play(backgroundMusic);
+            MediaPlayer.IsRepeating = true;
         }
 
+        /// <summary>
+        /// Updates everything in the game.
+        /// </summary>
+        /// <param name="gameTime"> The elapsed time in the game. </param>
         protected override void Update(GameTime gameTime)
         {
-            if(GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape)) { Exit(); }
+            // Get the current input states.
             kb = Keyboard.GetState();
+            ms = Mouse.GetState();
+
+            // Calculate the adjusted mouse position based on the maximum supported resolution, and the current resolution.
+            adjustedMousePosition = new((int)(ms.X * (3840.0 / _graphics.PreferredBackBufferWidth)), (int)(ms.Y * (2160.0 / _graphics.PreferredBackBufferHeight)));
 
             // Snowflakes are updated every frame, in every gamestate.
             foreach (Snow snowflake in snowManager)
@@ -193,13 +233,23 @@ namespace SealSoccer
                 snowflake.Update((int)wind);
             }
 
+            // Handle everything specific to the different game states.
             switch (gameState)
             {
+                // Everything that must be updated on the main menu.
                 case GameState.MainMenu:
 
-                    if(SingleKeyPress(Keys.Enter))
+                    // If they click the play button, or press the 'Enter' key, start the game!
+                    if(playButton.Update(ms, pms, adjustedMousePosition) || SingleKeyPress(Keys.Enter))
                     {
+                        IsMouseVisible = false;
                         gameState = GameState.Game;
+                    }
+
+                    // If they click the quit button, or press the 'Escape' key, close the app.
+                    if(quitButton.Update(ms, pms, adjustedMousePosition) || SingleKeyPress(Keys.Escape))
+                    {
+                        Exit();
                     }
 
                     break;
@@ -217,6 +267,7 @@ namespace SealSoccer
                         case Seal.BumpType.Launch:
 
                             soccerBall.Launch(xMod);
+                            bump.Play();
                             score++; // Add a point to score.
                             windParameter--; // Decrement wind parameter.
                             xModParameter--; // Decrement xMod parameter;
@@ -289,16 +340,18 @@ namespace SealSoccer
                             newHighscore = true;
                         }
 
+                        IsMouseVisible = true;
                         gameState = GameState.GameOver;
                     }
 
                     break;
 
+                // Everything that must be updated on the game over menu.
                 case GameState.GameOver:
 
-                    if(SingleKeyPress(Keys.Enter))
+                    // If they click the menu button or press the 'Enter' key, go back to the main menu.
+                    if(menuButton.Update(ms, pms, adjustedMousePosition) || SingleKeyPress(Keys.Enter))
                     {
-
                         // If they've beaten their highscore, save it before resetting their score.
                         if(newHighscore)
                         {
@@ -315,7 +368,9 @@ namespace SealSoccer
                     break;
             }
 
-            pkb = kb; // Set previous keyboard state to the keyboard state at the end of the frame.
+            // Set the previous input states to the current input states at the end of the frame.
+            pkb = kb;
+            pms = ms;
             base.Update(gameTime);
         }
 
@@ -332,9 +387,15 @@ namespace SealSoccer
 
             switch (gameState)
             {
+                // Everything that needs to be drawn on the main menu.
                 case GameState.MainMenu:
 
+                    // Display the player's highscore on the main menu.
                     _spriteBatch.DrawString(mediumJersey10, $"HIGHSCORE: {highscore}", highscoreWriteVector, Color.Gold);
+
+                    // Draw the buttons.
+                    playButton.Draw(_spriteBatch);
+                    quitButton.Draw(_spriteBatch);
 
                     // Draw each of the snowflakes underneath the logo.
                     foreach (Snow snowflake in snowManager)
@@ -343,10 +404,11 @@ namespace SealSoccer
                     }
 
                     // Draw our logo to the main menu screen.
-                    _spriteBatch.Draw(logo, logoDrawbox, Color.Red);
+                    _spriteBatch.Draw(logo, logoDrawbox, Color.White);
 
                     break;
 
+                // Everything that needs to be drawn during the game.
                 case GameState.Game:
 
                     _spriteBatch.DrawString(mediumJersey10, $"Score: {score}", gameScoreWriteVector, Color.LightBlue);
@@ -378,6 +440,7 @@ namespace SealSoccer
                     {
                         _spriteBatch.DrawString(mediumJersey10, $"New Highscore!", gameOverNewScoreWriteVector, Color.LightGreen);
                     }
+                    menuButton.Draw(_spriteBatch);
 
                     break;
             }
@@ -443,7 +506,6 @@ namespace SealSoccer
             {
                 File.Create($"Highscore");
                 highscore = 0;
-                SaveHighscore(0);
             }
         }
 
