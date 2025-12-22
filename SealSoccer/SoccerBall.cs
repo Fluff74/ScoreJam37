@@ -27,9 +27,9 @@ namespace SealSoccer
 
         readonly Texture2D sprite = sprite; // This is the sprite of the soccerball.
         Rectangle hitbox = new(1830, 600, 180, 180); // This is both the hitbox of the soccerball, but also where it'll be drawn from.
-        Rectangle drawbox = new(1900, 660, 180, 180); // The drawbox of the soccerball.
+        Rectangle drawbox = new(1920, 690, 180, 180); // The drawbox of the soccerball.
         Rectangle source = new(0, 0, 60, 60); // This is the source rectangle from which the soccerball is drawn.
-        Vector2 velocity = new(0.0f, -10.0f); // This is the current velocity of the ball.
+        Vector2 velocity = new(0.0f, 0.0f); // This is the current velocity of the ball.
         float rotation = 0; // The rotation of the ball.
         readonly Random rng = new(); // This is a standard C# Random Number Generator.
 
@@ -117,6 +117,8 @@ namespace SealSoccer
         {
             hitbox.X = 1830;
             hitbox.Y = 600;
+            drawbox.X = 1920;
+            drawbox.Y = 690;
             velocity.X = 0.0f;
             velocity.Y = 0.0f;
             Gravity = 0.3f;
