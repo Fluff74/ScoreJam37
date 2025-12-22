@@ -64,16 +64,17 @@ namespace SealSoccer
 
         #region Assets
 
-        Texture2D snowflake;
-        Texture2D sealSpritesheet;
-        Texture2D soccerBallSprite;
-        Texture2D ground;
-        Texture2D backdrop;
-        Texture2D logo;
-        Texture2D gameOverMenu;
-        SpriteFont mediumJersey10;
-        Song backgroundMusic;
-        SoundEffect bump;
+        Texture2D snowflake; // The texture used for the snowflakes, without a color tint.
+        Texture2D sealSpritesheet; // The spritesheet for the seal's galumphing animation.
+        Texture2D soccerBallSprite; // The sprite used for the soccerball, which is rotated in code.
+        Texture2D ground; // The texture used for the ground.
+        Texture2D backdrop; // The texture used for the backdrop.
+        Texture2D logo; // The game's official logo.
+        Texture2D gameOverMenu; // The texture used for the background of the text in the game over menu.
+        SpriteFont mediumJersey10; // The font used for all text in the game.
+        Song backgroundMusic; // The free background music from Pixabay, made by VibeHorn.
+        SoundEffect bump; // The bump sound effect that plays when the seal hits the ball.
+        SoundEffect windBlow; // The wind sound effect that plays when the wind direction changes.
 
         #endregion
 
@@ -106,6 +107,9 @@ namespace SealSoccer
 
         #endregion
 
+        /// <summary>
+        /// The constructor of the game.
+        /// </summary>
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this);
@@ -123,6 +127,9 @@ namespace SealSoccer
             #endregion
         }
 
+        /// <summary>
+        /// Initializes everything that doesn't need an asset of some kind.
+        /// </summary>
         protected override void Initialize()
         {
             #region Utilities
@@ -167,22 +174,27 @@ namespace SealSoccer
             base.Initialize();
         }
 
+        /// <summary>
+        /// Loads all of the assets into the game, and initializes objects that utilize assets.
+        /// </summary>
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
             #region Assets
 
+            // Load all of the assets.
             snowflake = Content.Load<Texture2D>($"Snowflake");
             sealSpritesheet = Content.Load<Texture2D>($"Seal");
             soccerBallSprite = Content.Load<Texture2D>($"Soccerball");
             ground = Content.Load<Texture2D>($"Ground");
             backdrop = Content.Load<Texture2D>($"Backdrop");
-            logo = Content.Load<Texture2D>($"Snowflake");
+            logo = Content.Load<Texture2D>($"Logo");
             gameOverMenu = Content.Load<Texture2D>($"GameOverMenu");
             mediumJersey10 = Content.Load<SpriteFont>($"Jersey10");
             backgroundMusic = Content.Load<Song>($"BackgroundMusic");
             bump = Content.Load<SoundEffect>($"Bump");
+            windBlow = Content.Load<SoundEffect>($"Wind");
 
             #endregion
 
@@ -209,7 +221,7 @@ namespace SealSoccer
             #endregion
 
             // Play the background music.
-            MediaPlayer.Volume = 0.08f;
+            MediaPlayer.Volume = 0.03f;
             MediaPlayer.Play(backgroundMusic);
             MediaPlayer.IsRepeating = true;
         }
@@ -309,6 +321,7 @@ namespace SealSoccer
                     {
                         // Keeps the wind between -10 and 10.
                         wind = rng.Next(10, 31) - 20;
+                        windBlow.Play();
                         windParameter = 5;
                     }
 
@@ -374,17 +387,23 @@ namespace SealSoccer
             base.Update(gameTime);
         }
 
+        /// <summary>
+        /// Draws everything in the game to the screen.
+        /// </summary>
+        /// <param name="gameTime"> The elapsed time in the game. </param>
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             _spriteBatch.Begin(transformMatrix: windowScaler, samplerState: SamplerState.PointClamp);
 
+            // The seal, soccerball, ground, and backdrop need to be drawn every frame, regardless of the game state.
             _spriteBatch.Draw(ground, groundDrawbox, Color.White);
             _spriteBatch.Draw(backdrop, backdropDrawbox, Color.White);
             seal.Draw(_spriteBatch);
             soccerBall.Draw(_spriteBatch);
 
+            // Handle everything specific to the different game states.
             switch (gameState)
             {
                 // Everything that needs to be drawn on the main menu.
@@ -421,6 +440,7 @@ namespace SealSoccer
 
                     break;
 
+                // Everything that needs to be drawn on the game over menu.
                 case GameState.GameOver:
 
                     // Draw each of the snowflakes underneath the menu.
