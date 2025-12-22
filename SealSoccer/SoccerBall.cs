@@ -9,7 +9,11 @@ namespace SealSoccer
     //
     // This is the soccerball that the seal will be trying to keep in the air. It won't be animated, I will just rotate it
     // with code.
-    internal class SoccerBall
+    /// <summary>
+    /// This is the only constructor for a soccerball. It only needs a texture, everything else is handled internally.
+    /// </summary>
+    /// <param name="sprite"> The sprite of the soccerball. </param>
+    internal class SoccerBall(Texture2D sprite)
     {
         /// <summary>
         /// A property to access the hitbox of the soccer ball.
@@ -19,27 +23,20 @@ namespace SealSoccer
         /// <summary>
         /// It's gravity, it moves the ball downwards.
         /// </summary>
-        public float Gravity { get; set; }
+        public float Gravity { get; set; } = 0.3f;
 
-        Texture2D sprite; // This is the sprite of the soccerball.
-        Rectangle hitbox; // This is both the hitbox of the soccerball, but also where it'll be drawn from.
-        Rectangle drawbox;
-        Rectangle source; // This is the source rectangle from which the soccerball is drawn.
-        Vector2 velocity; // This is the current velocity of the ball.
-        float rotation; // The rotation of the ball.
+        readonly Texture2D sprite = sprite; // This is the sprite of the soccerball.
+        Rectangle hitbox = new(1830, 600, 180, 180); // This is both the hitbox of the soccerball, but also where it'll be drawn from.
+        Rectangle drawbox = new(1900, 660, 180, 180); // The drawbox of the soccerball.
+        Rectangle source = new(0, 0, 60, 60); // This is the source rectangle from which the soccerball is drawn.
+        Vector2 velocity = new(0.0f, -10.0f); // This is the current velocity of the ball.
+        float rotation = 0; // The rotation of the ball.
         readonly Random rng = new(); // This is a standard C# Random Number Generator.
 
-        public SoccerBall(Texture2D sprite)
-        {
-            this.sprite = sprite;
-            hitbox = new(1830, 600, 180, 180);
-            drawbox = new(1900, 660, 180, 180);
-            source = new(0, 0, 60, 60);
-            velocity = new(0.0f, -10.0f);
-            rotation = 0;
-            Gravity = 0.3f;
-        }
-
+        /// <summary>
+        /// Updates the position of the soccerball based off of the wind and its velocity.
+        /// </summary>
+        /// <param name="wind"> The speed of the wind right now. </param>
         public void Update(float wind)
         {
             // Move the ball.
@@ -113,6 +110,9 @@ namespace SealSoccer
             sb.Draw(sprite, drawbox, source, Color.White, rotation, source.Center.ToVector2(), SpriteEffects.None, 0.0f);
         }
 
+        /// <summary>
+        /// Resets all of the ball-related variables.
+        /// </summary>
         public void Reset()
         {
             hitbox.X = 1830;

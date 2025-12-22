@@ -57,6 +57,8 @@ namespace SealSoccer
         Texture2D sealSpritesheet;
         Texture2D soccerBallSprite;
         Texture2D ground;
+        Texture2D backdrop;
+        SpriteFont mediumJersey10;
 
         #endregion
 
@@ -75,6 +77,8 @@ namespace SealSoccer
         #region Draw Locations
 
         Rectangle groundDrawbox;
+        Rectangle backdropDrawbox;
+        Rectangle logoDrawbox;
 
         #endregion
 
@@ -103,8 +107,10 @@ namespace SealSoccer
             windowScaler = Matrix.CreateScale(xScale, yScale, 1.0f);
 
             groundDrawbox = new(0, 2070, 3840, 90); // The place we're drawing the ground.
+            backdropDrawbox = new(0, 0, 3840, 2070); // The place we're drawing the backdrop.
+            logoDrawbox = new(50, 50, 1200, 1200); // The logo is drawn here.
 
-            gameState = GameState.Game;
+            gameState = GameState.MainMenu;
 
             wind = 0; // There is no wind at the start.
             windParameter = 5; // Sets the wind parameter to an initial value of five.
@@ -126,6 +132,8 @@ namespace SealSoccer
             sealSpritesheet = Content.Load<Texture2D>($"Seal");
             soccerBallSprite = Content.Load<Texture2D>($"Soccerball");
             ground = Content.Load<Texture2D>($"Ground");
+            backdrop = Content.Load<Texture2D>($"Backdrop");
+            mediumJersey10 = Content.Load<SpriteFont>($"Jersey10");
 
             #endregion
 
@@ -154,6 +162,16 @@ namespace SealSoccer
 
             switch(gameState)
             {
+                case GameState.MainMenu:
+
+                    // Update each of the snowflakes.
+                    foreach (Snow snowflake in snowManager)
+                    {
+                        snowflake.Update((int)wind);
+                    }
+
+                    break;
+
                 case GameState.Game:
 
                     // Update the soccerball every frame.
@@ -204,9 +222,9 @@ namespace SealSoccer
 
                     // Update each of the snowflakes.
                     foreach (Snow snowflake in snowManager)
-                        {
-                            snowflake.Update((int)wind);
-                        }
+                    {
+                        snowflake.Update((int)wind);
+                    }
 
                     // Changes the wind every five points.
                     if(windParameter == 0)
@@ -221,6 +239,18 @@ namespace SealSoccer
                     {
                         xMod++;
                         xModParameter = 10;
+                    }
+
+                    // Increments gravity as needed.
+                    if(gravParamOne == 0)
+                    {
+                        soccerBall.Gravity = 0.4f;
+                        gravParamOne = -1;
+                    }
+                    if(gravParamTwo == 0)
+                    {
+                        soccerBall.Gravity = 0.5f;
+                        gravParamTwo = -1;
                     }
 
                     if(CheckGroundCollision(soccerBall.Hitbox))
@@ -242,8 +272,11 @@ namespace SealSoccer
             _spriteBatch.Begin(transformMatrix: windowScaler, samplerState: SamplerState.PointClamp);
 
             _spriteBatch.Draw(ground, groundDrawbox, Color.White);
+            _spriteBatch.Draw(backdrop, backdropDrawbox, Color.White);
             seal.Draw(_spriteBatch);
             soccerBall.Draw(_spriteBatch);
+
+            // _spriteBatch.Draw(snowflake, logoDrawbox, Color.Red);
 
             // Draw each of the snowflakes.
             foreach (Snow snowflake in snowManager)
@@ -283,6 +316,7 @@ namespace SealSoccer
         {
             seal.Reset();
             soccerBall.Reset();
+            score = 0;
             wind = 0;
             windParameter = 5;
             xMod = 0;
