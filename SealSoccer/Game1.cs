@@ -1,8 +1,9 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using System.IO;
+using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System.Collections.Generic;
-using System;
 
 namespace SealSoccer
 {
@@ -46,8 +47,8 @@ namespace SealSoccer
 
         #region Objects
 
-        Seal seal;
-        SoccerBall soccerBall;
+        Seal seal; // Player character.
+        SoccerBall soccerBall; // The ball that the player tries to hit.
 
         #endregion
 
@@ -58,6 +59,7 @@ namespace SealSoccer
         Texture2D soccerBallSprite;
         Texture2D ground;
         Texture2D backdrop;
+        Texture2D logo;
         SpriteFont mediumJersey10;
 
         #endregion
@@ -65,6 +67,7 @@ namespace SealSoccer
         #region Variables
 
         int score; // How many consecutive balls the seal has bumped.
+        int highscore; // The highest score earned by the player.
         float wind; // The current speed at which the wind is blowing.
         int windParameter; // The amount of points needed for the wind to change direction.
         int xMod; // The value by which the ball's X velocity can be modified.
@@ -76,9 +79,10 @@ namespace SealSoccer
 
         #region Draw Locations
 
-        Rectangle groundDrawbox;
-        Rectangle backdropDrawbox;
-        Rectangle logoDrawbox;
+        Rectangle groundDrawbox; // Where we draw the ground.
+        Rectangle backdropDrawbox; // Where we draw the backdrop.
+        Rectangle logoDrawbox; // Where we draw the logo.
+        Vector2 highscoreWriteVector; // Where we write the highscore.
 
         #endregion
 
@@ -105,12 +109,12 @@ namespace SealSoccer
             xScale = (float)_graphics.PreferredBackBufferWidth / 3840;
             yScale = (float)_graphics.PreferredBackBufferHeight / 2160;
             windowScaler = Matrix.CreateScale(xScale, yScale, 1.0f);
+            gameState = GameState.MainMenu;
 
             groundDrawbox = new(0, 2070, 3840, 90); // The place we're drawing the ground.
             backdropDrawbox = new(0, 0, 3840, 2070); // The place we're drawing the backdrop.
             logoDrawbox = new(50, 50, 1200, 1200); // The logo is drawn here.
-
-            gameState = GameState.MainMenu;
+            highscoreWriteVector = new(400, 1800); // The place we're writing the highscore.
 
             wind = 0; // There is no wind at the start.
             windParameter = 5; // Sets the wind parameter to an initial value of five.
@@ -118,6 +122,8 @@ namespace SealSoccer
             xModParameter = 10; // Sets the xModParameter to an initial value of ten.
             gravParamOne = 25; // Sets the first gravity increment to happen at 25 points.
             gravParamTwo = 50; // Sets the second gravity increment to happen at 50 points.
+
+            LoadHighscore(); // Load in the player's highscore.
 
             base.Initialize();
         }
@@ -133,6 +139,7 @@ namespace SealSoccer
             soccerBallSprite = Content.Load<Texture2D>($"Soccerball");
             ground = Content.Load<Texture2D>($"Ground");
             backdrop = Content.Load<Texture2D>($"Backdrop");
+            logo = Content.Load<Texture2D>($"Snowflake");
             mediumJersey10 = Content.Load<SpriteFont>($"Jersey10");
 
             #endregion
@@ -201,14 +208,14 @@ namespace SealSoccer
                     }
 
                     // Allows the player to move left.
-                    if(kb.IsKeyDown(Keys.A) && kb.IsKeyUp(Keys.D))
+                    if((kb.IsKeyDown(Keys.A) && kb.IsKeyUp(Keys.D)) || (kb.IsKeyDown(Keys.Left) && kb.IsKeyUp(Keys.Right)))
                     {
                         seal.Move(false);
                         seal.UpdateAnimation(gameTime);
                     }
 
                     // Allows the player to move right.
-                    else if(kb.IsKeyDown(Keys.D) && kb.IsKeyUp(Keys.A))
+                    else if((kb.IsKeyDown(Keys.D) && kb.IsKeyUp(Keys.A)) && (kb.IsKeyDown(Keys.Right) && kb.IsKeyUp(Keys.Left)))
                     {
                         seal.Move(true);
                         seal.UpdateAnimation(gameTime);
@@ -276,12 +283,31 @@ namespace SealSoccer
             seal.Draw(_spriteBatch);
             soccerBall.Draw(_spriteBatch);
 
-            // _spriteBatch.Draw(snowflake, logoDrawbox, Color.Red);
-
-            // Draw each of the snowflakes.
-            foreach (Snow snowflake in snowManager)
+            switch (gameState)
             {
-                snowflake.Draw(_spriteBatch);
+                case GameState.MainMenu:
+
+                    _spriteBatch.DrawString(mediumJersey10, $"HIGHSCORE: {highscore}", highscoreWriteVector, Color.Gold);
+
+                    // Draw each of the snowflakes underneath the logo.
+                    foreach (Snow snowflake in snowManager)
+                    {
+                        snowflake.Draw(_spriteBatch);
+                    }
+
+                    _spriteBatch.Draw(logo, logoDrawbox, Color.Red);
+
+                    break;
+
+                case GameState.Game:
+
+                    // Draw each of the snowflakes.
+                    foreach (Snow snowflake in snowManager)
+                    {
+                        snowflake.Draw(_spriteBatch);
+                    }
+
+                    break;
             }
 
             _spriteBatch.End();
@@ -307,6 +333,63 @@ namespace SealSoccer
         public bool CheckGroundCollision(Rectangle soccerball)
         {
             return groundDrawbox.Intersects(soccerball);
+        }
+
+        /// <summary>
+        /// Loads the player's highscore into the game.
+        /// </summary>
+        public void LoadHighscore()
+        {
+            // Check if file exists.
+            if(File.Exists($"Highscore"))
+            {
+                // Create access to the file, and means of reading it.
+                FileStream file = File.OpenRead($"Highscore");
+                BinaryReader reader = new(file);
+
+                // Attempt to read the highscore.
+                try
+                {
+                    highscore = reader.ReadInt32();
+                }
+
+                // If the data is corrupted, change their highscore to zero.
+                catch
+                {
+                    highscore = 0;
+                }
+
+                // Close the reader when we're done with it.
+                finally
+                {
+                    reader.Close();
+                }
+            }
+
+            // It doesn't exist, so create it and load their highscore as zero.
+            else
+            {
+                File.Create($"Highscore");
+                highscore = 0;
+                SaveHighscore(0);
+            }
+        }
+
+        /// <summary>
+        /// Saves the highscore to the highscore file.
+        /// </summary>
+        /// <param name="newScore"> The new highscore of the player. </param>
+        public static void SaveHighscore(int newScore)
+        {
+            // Create access to the file, and means of writing to it.
+            FileStream file = File.OpenWrite($"Highscore");
+            BinaryWriter writer = new(file);
+
+            // Write their highscore.
+            writer.Write(newScore);
+
+            // Close the writer.
+            writer.Close();
         }
 
         /// <summary>
